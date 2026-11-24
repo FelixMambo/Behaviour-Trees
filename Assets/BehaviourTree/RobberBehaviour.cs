@@ -16,6 +16,9 @@ public class RobberBehaviour : MonoBehaviour
 
     Node.Status treeStatus = Node.Status.RUNNING;
 
+    [Range(0, 1000)]
+    public int money = 800;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -24,6 +27,7 @@ public class RobberBehaviour : MonoBehaviour
         tree = new BehaviourTree();
         Sequence steal = new Sequence("Steal Something");
         Leaf goToDiamond = new Leaf("Go To Diamond", GoToDiamond);
+        Leaf hasGoMoney = new Leaf("Has Got Money", HasMoney);
         Leaf goToBackDoor = new Leaf("Go To Backdoor", GoToBackDoor);
         Leaf goToFrontDoor = new Leaf("Go To Frontdoor", GoToFrontDoor);
         Leaf goToVan = new Leaf("Go To Van", GoToVan);
@@ -32,6 +36,7 @@ public class RobberBehaviour : MonoBehaviour
         opendoor.AddChild(goToFrontDoor);
         opendoor.AddChild(goToBackDoor);
 
+        steal.AddChild(hasGoMoney);
         steal.AddChild(goToBackDoor);
         steal.AddChild(goToDiamond);
         //steal.AddChild(goToBackDoor);
@@ -43,11 +48,18 @@ public class RobberBehaviour : MonoBehaviour
 
     }
 
+    public Node.Status HasMoney()
+    {
+        if (money >= 500)
+            return Node.Status.FAILURE;
+        return Node.Status.SUCCESS;
+    }
+
     public Node.Status GoToDiamond()
     {
         Node.Status s = GoToLocation(diamond.transform.position);
         if (s == Node.Status.SUCCESS) {
-            diamond.transform.parent = this.gameObject.transform
+            diamond.transform.parent = this.gameObject.transform;
         }
         return s;
     }
@@ -63,7 +75,12 @@ public class RobberBehaviour : MonoBehaviour
 
     public Node.Status GoToVan()
     {
-        return GoToLocation(van.transform.position);
+        Node.Status s = GoToLocation(van.transform.position);
+        if (s == Node.Status.SUCCESS) {
+            money += 300;
+            diamond.SetActive(false);
+        }
+        return s;
     }
 
     public Node.Status GoToDoor(GameObject door){
@@ -103,7 +120,7 @@ public class RobberBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(treeStatus == Node.Status.RUNNING)
+        if(treeStatus != Node.Status.RUNNING)
             treeStatus = tree.Process();
     }
 }
